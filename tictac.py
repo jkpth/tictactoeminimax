@@ -125,6 +125,13 @@ class FourInARow:
         two_side_open_2_me = one_side_open_2_me = 0
         two_side_open_2_opponent = one_side_open_2_opponent = 0
 
+        if self.check_win(player):
+            return 1000
+        elif self.check_win(opponent):
+            return -1000
+        elif self.is_full():
+            return 0
+
 
         h_seqs = []
         for row in range(5):
