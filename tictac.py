@@ -2,10 +2,6 @@ import time
 import math
 from typing import List, Tuple, Optional
 
-EMPTY = ' '
-X = 'X'  # Player 1
-O = 'O'  # Player 2 (opponent)
-
 class FourInARow:
     def __init__(self):
         self.board = [[' ' for _ in range(6)] for _ in range(5)]
@@ -35,11 +31,11 @@ class FourInARow:
 
     def get_valid_moves(self) -> List[Tuple[int, int]]:
         moves = []
-        for row in range(5):
-            for col in range(6):
+        for col in range(6):  # Prioritize column first
+            for row in range(5):  # Then row
                 if self.is_valid_move(row, col):
                     moves.append((row, col))
-        return sorted(moves, key=lambda x: (x[1], x[0]))
+        return moves
 
     def check_win(self, player: str) -> bool:
         # Check horizontal, vertical, and diagonal wins
@@ -63,153 +59,6 @@ class FourInARow:
     def is_full(self) -> bool:
         return all(self.board[row][col] != ' ' for row in range(5) for col in range(6))
 
-    def get_diagonals_topleft_bottomright(self):
-        rows = 5
-        cols = 6
-        diagonals = []
-
-        # Get diagonals starting from the first row
-        for col_start in range(cols):
-            diagonal = []
-            row, col = 0, col_start
-            while row < rows and col < cols:
-                diagonal.append(self.board[row][col])
-                row += 1
-                col += 1
-            diagonals.append(diagonal)
-
-        # Get diagonals starting from the first column (excluding the [0,0] diagonal)
-        for row_start in range(1, rows):
-            diagonal = []
-            row, col = row_start, 0
-            while row < rows and col < cols:
-                diagonal.append(self.board[row][col])
-                row += 1
-                col += 1
-            diagonals.append(diagonal)
-
-        return diagonals
-
-    def get_diagonals_topright_bottomleft(self):
-        rows = 5
-        cols = 6
-        diagonals = []
-
-        # Get diagonals starting from the first row (moving left from the top right)
-        for col_start in range(cols):
-            diagonal = []
-            row, col = 0, col_start
-            while row < rows and col >= 0:
-                diagonal.append(self.board[row][col])
-                row += 1
-                col -= 1
-            diagonals.append(diagonal)
-
-        # Get diagonals starting from the last column (excluding the [0,cols-1] diagonal)
-        for row_start in range(1, rows):
-            diagonal = []
-            row, col = row_start, cols - 1
-            while row < rows and col >= 0:
-                diagonal.append(self.board[row][col])
-                row += 1
-                col -= 1
-            diagonals.append(diagonal)
-
-        return diagonals
-
-    def evaluate(self, player):
-        opponent = 'X' if player == 'O' else 'O'
-
-        #print("player: " + player + " opponent: " + opponent)
-        
-        two_side_open_3_me = one_side_open_3_me = 0
-        two_side_open_3_opponent = one_side_open_3_opponent = 0
-        two_side_open_2_me = one_side_open_2_me = 0
-        two_side_open_2_opponent = one_side_open_2_opponent = 0
-
-
-        h_seqs = []
-        for row in range(5):
-            h_seq = self.board[row][:6]
-            h_seqs.append(h_seq)
-
-        #print(h_seqs)
-        
-        v_seqs = []
-        for col in range(6): 
-            v_seq = [self.board[row][col] for row in range(5)]
-            v_seqs.append(v_seq)
-        #print(v_seqs)
-
-        diaglr = self.get_diagonals_topleft_bottomright()
-        #print(diaglr)
-
-        diagrl = self.get_diagonals_topright_bottomleft()
-        #print(diagrl)
-
-        all_seqs = h_seqs + v_seqs + diaglr + diagrl
-
-        for seq in all_seqs:
-            # Check for three in a row
-            if self.check_open_3(seq, player):
-                two_side_open_3_me += 1
-            elif self.check_open_3(seq, opponent):
-                two_side_open_3_opponent += 1
-
-            # Check for one-sided three in a row
-            elif self.check_one_side_open_3(seq, player):
-                one_side_open_3_me += 1
-            elif self.check_one_side_open_3(seq, opponent):
-                one_side_open_3_opponent += 1
-
-            # Check for two in a row
-            elif self.check_open_2(seq, player):
-                two_side_open_2_me += 1
-            elif self.check_open_2(seq, opponent):
-                two_side_open_2_opponent += 1
-
-            # Check for one-sided two in a row
-            elif self.check_one_side_open_2(seq, player):
-                one_side_open_2_me += 1
-            elif self.check_one_side_open_2(seq, opponent):
-                one_side_open_2_opponent += 1     
-    
-        heuristic_score = (200 * two_side_open_3_me
-                         - 80  * two_side_open_3_opponent
-                         + 150 * one_side_open_3_me
-                         - 40  * one_side_open_3_opponent
-                         + 20  * two_side_open_2_me
-                         - 15  * two_side_open_2_opponent
-                         + 5   * one_side_open_2_me
-                         - 2   * one_side_open_2_opponent)
-        
-        #print(heuristic_score)
-
-        return heuristic_score
-
-    def check_open_3(self, seq, player):
-        return [' ', player, player, player, ' '] in [seq[i:i + 5] for i in range(len(seq) - 4)]
-
-    def check_one_side_open_3(self, seq, player):
-        return ([player, player, player, ' '] in [seq[i:i + 4] for i in range(len(seq) - 3)] or
-                [' ', player, player, player] in [seq[i:i + 4] for i in range(len(seq) - 3)])
-
-    def check_open_2(self, seq, player):
-        return [' ', player, player, ' '] in [seq[i:i + 4] for i in range(len(seq) - 3)]
-
-    def check_one_side_open_2(self, seq, player):
-        return ([player, player, ' '] in [seq[i:i + 3] for i in range(len(seq) - 2)] or
-                [' ', player, player] in [seq[i:i + 3] for i in range(len(seq) - 2)])
-
-
-
-
-    def print_board(self):
-        for row in self.board:
-            print('|' + '|'.join(row) + '|')
-        print('-' * 13)
-        print(' 0 1 2 3 4 5')
-"""
     def evaluate(self, player: str) -> int:
         if self.check_win(player):
             return 1000
@@ -228,11 +77,12 @@ class FourInARow:
         two_side_open_2_me = self.count_open_n_in_a_row(me, 2, 2)
         two_side_open_2_opp = self.count_open_n_in_a_row(opponent, 2, 2)
         one_side_open_2_me = self.count_open_n_in_a_row(me, 2, 1)
+        one_side_open_2_opp = self.count_open_n_in_a_row(opponent, 2, 1)
 
         score = 200 * two_side_open_3_me - 80 * two_side_open_3_opp + \
                 150 * one_side_open_3_me - 40 * one_side_open_3_opp + \
                 20 * two_side_open_2_me - 15 * two_side_open_2_opp + \
-                5 * one_side_open_2_me
+                5 * one_side_open_2_me - 2 * one_side_open_2_opp
 
         return score
 
@@ -267,10 +117,12 @@ class FourInARow:
             open_count += 1
 
         return open_count >= open_sides
-"""
 
-
-# The rest of the code (minimax and play_game functions) remains the same
+    def print_board(self):
+        print("  1 2 3 4 5 6")  # Column numbers (1-indexed)
+        for i, row in enumerate(self.board):
+            print(f"{i+1} " + '|'.join(row) + '|')  # Row numbers (1-indexed)
+        print('-' * 13)
 
 def minimax(game: FourInARow, depth: int, alpha: float, beta: float, maximizing_player: bool, player: str) -> Tuple[int, Optional[Tuple[int, int]], int]:
     nodes_generated = 1
@@ -279,7 +131,6 @@ def minimax(game: FourInARow, depth: int, alpha: float, beta: float, maximizing_
         return game.evaluate(player), None, nodes_generated
 
     valid_moves = game.get_valid_moves()
-    #print(valid_moves)
     
     if maximizing_player:
         max_eval = -math.inf
@@ -318,20 +169,19 @@ def play_game():
     game = FourInARow()
     
     # Player 1 (X) makes the first move
-    game.make_move(2, 3)
+    game.make_move(2, 3)  # [3,4] in 1-indexed notation
     print("Player 1 (X) makes the first move at [3, 4]")
     game.print_board()
     
     # Player 2 (O) makes the second move
-    game.make_move(2, 2)
+    game.make_move(2, 2)  # [3,3] in 1-indexed notation
     print("Player 2 (O) makes the second move at [3, 3]")
     game.print_board()
     
     while True:
         current_player = 'X' if game.current_player == 'X' else 'O'
         depth = 2 if current_player == 'X' else 4
-        #depth = 2 if current_player == 'O' else 4
-        
+        player_number = 1 if current_player == 'X' else 2
         
         start_time = time.time()
         _, move, nodes = minimax(game, depth, -math.inf, math.inf, True, current_player)
@@ -339,13 +189,13 @@ def play_game():
         
         if move:
             game.make_move(move[0], move[1])
-            print(f"Player {1 if current_player == 'X' else 2} ({current_player}) makes a move at [{move[0]+1}, {move[1]+1}]")
+            print(f"Player {player_number} ({current_player}) makes a move at [{move[0]+1}, {move[1]+1}]")
             print(f"Nodes generated: {nodes}")
             print(f"CPU execution time: {end_time - start_time:.4f} seconds")
             game.print_board()
             
             if game.check_win(current_player):
-                print(f"Player {1 if current_player == 'X' else 2} ({current_player}) wins!")
+                print(f"Player {player_number} ({current_player}) wins!")
                 break
             elif game.is_full():
                 print("It's a tie!")
@@ -354,22 +204,5 @@ def play_game():
             print("No valid moves left. It's a tie!")
             break
 
-def test():
-    game = FourInARow()
-    game.make_move(4,2)
-    game.make_move(3,1)
-    game.make_move(3,2)
-    game.make_move(2,2)
-    game.make_move(3,3)
-    game.make_move(1,2)
-    game.make_move(2,4)
-    game.make_move(3,4)
-    game.make_move(1,3)
-    game.make_move(2,3)
-    game.print_board()
-    print(game.evaluate('X'))
-
-
 if __name__ == "__main__":
-    #test()
     play_game()
